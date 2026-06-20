@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Business Booking Dashboard</title>
+  <script src="https://jsdelivr.net"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #1a0f0a;
+      color: #f5f0eb;
+    }
+    .dashboard-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background-color: #2c1a11;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      color: #e6dfd5;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #3d2519;
+      padding-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid #3d2519;
+    }
+    th {
+      background-color: #120a06;
+      color: #c4b5a9;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    tr:hover {
+      background-color: #362115;
+    }
+    .cancel-btn {
+      background-color: #8b2626;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .cancel-btn:hover {
+      background-color: #b23b3b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <h1>Appointments Schedule</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Client Name</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="appointmentRows">
+        <!-- Data will load here automatically -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Initialize Supabase
+    const SUPABASE_URL = 'https://supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_194EeT0E7f1lJhtaU_2fXg_fkNFts3I';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Load appointments from database
+    async function loadAppointments() {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .order('booking_date', { ascending: true });
+
+      if (error) {
+        alert('Error fetching data: ' + error.message);
+        return;
+      }
+
+      const tableBody = document.getElementById('appointmentRows');
+      tableBody.innerHTML = ''; // Clear older rows
+
+      data.forEach(appointment => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${appointment.name}</td>
+          <td>${appointment.booking_date}</td>
+          <td>${appointment.booking_time}</td>
+          <td>
+            <button class="cancel-btn" onclick="cancelAppointment('${appointment.id}')">Cancel</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Cancellation Logic (Deletes the row from database)
+    async function cancelAppointment(id) {
+      if (confirm('Are you sure you want to cancel this booking?')) {
+        const { error } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          alert('Could not cancel: ' + error.message);
+        } else {
+          alert('Appointment cancelled successfully.');
+          loadAppointments(); // Refresh the list
+        }
+      }
+    }
+
+    // Run this function immediately when page opens
+    loadAppointments();
+  </script>
+</body>
+</html>
